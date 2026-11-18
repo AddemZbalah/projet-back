@@ -1,0 +1,45 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Notifications{% endblock %}
+{% block main_class %}page--narrow{% endblock %}
+
+{% block body %}
+    {% set types = {
+        nouvelle_offre: { icon: 'bag', label: 'Nouvelle offre', link: path('app_favorites') },
+        rappel_retrait: { icon: 'clock', label: 'Rappel de retrait', link: path('app_reservations') },
+        reservation_confirmee: { icon: 'ticket', label: 'Réservation confirmée', link: path('app_reservations') },
+    } %}
+
+    <header class="page-head">
+        <h1>Notifications</h1>
+        <p>{{ unreadIds is empty ? 'Vous êtes à jour.' : unreadIds|length ~ ' nouvelle' ~ (unreadIds|length > 1 ? 's' : '') ~ ' notification' ~ (unreadIds|length > 1 ? 's' : '') ~ '.' }}</p>
+    </header>
+
+    {% if notifications is empty %}
+        <div class="empty-state">
+            <span class="empty-state__icon">{{ ui.icon('bell', 28) }}</span>
+            <h2>Aucune notification</h2>
+            <p>Vos confirmations de réservation et les nouvelles offres de vos commerces favoris apparaîtront ici.</p>
+        </div>
+    {% else %}
+        <ul class="notif-list">
+            {% for n in notifications %}
+                {% set t = n.type ? types[n.type.value] : { icon: 'bell', label: 'Information', link: null } %}
+                {% set isNew = n.id in unreadIds %}
+                <li class="notif{{ isNew ? ' is-new' : '' }}">
+                    <span class="notif__icon">{{ ui.icon(t.icon, 20) }}</span>
+                    <div class="notif__body">
+                        <div class="notif__top">
+                            <strong>{{ t.label }}</strong>
+                            {% if isNew %}<span class="chip">Nouveau</span>{% endif %}
+                            <time class="muted" datetime="{{ n.createdAt|date('c') }}">{{ n.createdAt|date('d/m à H:i') }}</time>
+                        </div>
+                        <p>{{ n.message }}</p>
+                        {% if t.link %}<a class="notif__link" href="{{ t.link }}">Voir</a>{% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

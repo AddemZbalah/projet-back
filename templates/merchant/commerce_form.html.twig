@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Modifier {{ commerce.name }}{% endblock %}
+{% block main_class %}page--narrow{% endblock %}
+
+{% block body %}
+    <a class="back-link" href="{{ path('app_merchant_dashboard') }}">{{ ui.icon('arrow-left', 18) }} Retour à mon espace</a>
+
+    <section class="card">
+        <header class="auth__head">
+            <h1>Mon commerce</h1>
+            <p>Ces informations sont affichées aux clients sur chacune de vos offres.</p>
+        </header>
+
+        {{ form_start(form, { attr: { class: 'form' } }) }}
+            {{ form_row(form.name) }}
+            {{ form_row(form.category) }}
+            {{ form_row(form.description) }}
+            {{ form_row(form.address) }}
+            {{ form_row(form.phone) }}
+
+            <hr class="form-divider">
+            {{ include('_photo_dropzone.html.twig', { field: form.photos, images: commerce.images }) }}
+
+            <div class="form-actions">
+                <a class="btn btn--ghost" href="{{ path('app_merchant_dashboard') }}">Annuler</a>
+                <button class="btn btn--primary" type="submit">Enregistrer</button>
+            </div>
+        {{ form_end(form) }}
+    </section>
+{% endblock %}

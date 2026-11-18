@@ -1,0 +1,43 @@
+{#
+    Zone de dépôt de photos (glisser-déposer + clic).
+    Paramètres : field (le champ form.photos), images (photos déjà enregistrées, optionnel), help (texte d'aide, optionnel)
+    Sans JavaScript, le champ <input type="file" multiple> reste utilisable normalement.
+#}
+{% import '_ui.html.twig' as ui %}
+{% set images = images|default([]) %}
+
+<fieldset class="fieldset photo-field">
+    <legend>{{ field.vars.label }}</legend>
+    <p class="help" style="margin-top: -6px;">{{ help|default('La première photo sert de couverture sur vos offres.') }} 8 photos maximum.</p>
+
+    {% if images is not empty %}
+        <ul class="photo-grid" aria-label="Photos actuelles">
+            {% for image in images %}
+                <li class="photo-tile">
+                    <img src="{{ image.url }}" alt="Photo {{ loop.index }}" loading="lazy">
+                    <label class="photo-tile__cover" title="Utiliser comme couverture">
+                        <input type="radio" name="cover_image" value="{{ image.id }}" {% if loop.first %}checked{% endif %}>
+                        <span>Couverture</span>
+                    </label>
+                    <label class="photo-tile__delete" title="Supprimer cette photo">
+                        <input type="checkbox" name="delete_images[]" value="{{ image.id }}">
+                        <span>{{ ui.icon('trash', 16) }}<span class="sr-only">Supprimer</span></span>
+                    </label>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <div class="dropzone{{ images is empty ? ' is-first-upload' : '' }}" data-dropzone data-max="{{ field.vars.attr['data-max'] }}">
+        {{ form_widget(field, { attr: field.vars.attr|merge({ class: 'dropzone__input' }) }) }}
+        <label class="dropzone__area" for="{{ field.vars.id }}">
+            <span class="dropzone__icon">{{ ui.icon('image-plus', 28) }}</span>
+            <strong>Glissez vos photos ici</strong>
+            <span class="muted">ou <u>parcourez vos fichiers</u> · JPG, PNG ou WebP</span>
+        </label>
+        <ul class="photo-grid dropzone__previews" aria-live="polite"></ul>
+        <p class="dropzone__status muted" hidden></p>
+    </div>
+
+    {{ form_errors(field) }}
+</fieldset>

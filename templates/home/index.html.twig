@@ -1,0 +1,151 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Près de vous{% endblock %}
+
+{% block body %}
+    <section class="hero">
+        <div>
+            <p class="eyebrow">{{ ui.icon('leaf', 16) }} Anti-gaspi &amp; local</p>
+            <h1>Sauvez de bons produits près de chez vous</h1>
+        </div>
+        <p>Réservez les invendus des commerces du quartier à prix réduit, puis récupérez-les pendant le créneau indiqué.</p>
+        <label class="search">
+            {{ ui.icon('search', 20) }}
+            <input id="offer-search" type="search" placeholder="Boulangerie, sushi, nom du commerce…" aria-label="Rechercher une offre" autocomplete="off">
+        </label>
+    </section>
+
+    {% set categories = offres|map(o => o.commerce.category|default('Commerce'))|reduce((acc, c) => c in acc ? acc : acc|merge([c]), []) %}
+
+    {% if offres is not empty %}
+        <div class="filter-bar">
+            {% if categories|length > 1 %}
+                <div class="filters" role="group" aria-label="Filtrer par catégorie" data-group="category">
+                    <button class="filter" type="button" data-value="" aria-pressed="true">Toutes</button>
+                    {% for c in categories %}
+                        <button class="filter" type="button" data-value="{{ c|lower }}" aria-pressed="false">{{ c }}</button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if preferences is not empty %}
+                <div class="filters" role="group" aria-label="Filtrer par régime alimentaire" data-group="pref">
+                    {% if userPrefIds is not empty %}
+                        <button class="filter filter--accent" type="button" data-value="mine" aria-pressed="false">{{ ui.icon('sparkles', 16) }} Mes préférences</button>
+                    {% endif %}
+                    {% for p in preferences %}
+                        <button class="filter" type="button" data-value="{{ p.id }}" aria-pressed="false">{{ p.name|capitalize }}</button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <p class="results-line" id="results-line" aria-live="polite">{{ offres|length }} offre{{ offres|length > 1 ? 's' : '' }} disponible{{ offres|length > 1 ? 's' : '' }}</p>
+    {% endif %}
+
+    {% if app.user and userPrefIds is empty and preferences is not empty %}
+        <a class="tip-banner" href="{{ path('app_profile') }}#preferences">
+            {{ ui.icon('sparkles', 20) }}
+            <span><strong>Végétarien, halal, sans gluten… ?</strong> Indiquez vos préférences pour voir en premier les paniers qui vous correspondent.</span>
+        </a>
+    {% endif %}
+
+    <section class="offers-grid" aria-label="Offres disponibles">
+        {% for offre in offres %}
+            {% set category = offre.commerce.category|default('Commerce') %}
+            {% set theme = ui.category_theme(category)|trim|split('|') %}
+            {% set soldOut = offre.quantityAvailable < 1 %}
+            {% set isMatch = offre.id in matchingIds %}
+            <a class="offer-card{{ soldOut ? ' is-soldout' : '' }}{{ isMatch ? ' is-match' : '' }}"
+               href="{{ path('app_offre_show', { id: offre.id }) }}"
+               data-category="{{ category|lower }}"
+               data-prefs=",{{ offre.preferences|map(p => p.id)|join(',') }},"
+               data-match="{{ isMatch ? '1' : '0' }}"
+               data-search="{{ (offre.title ~ ' ' ~ offre.commerce.name ~ ' ' ~ category ~ ' ' ~ offre.commerce.address ~ ' ' ~ offre.preferences|map(p => p.name)|join(' '))|lower }}">
+                <div class="media media--{{ theme[1] }}">
+                    {% if offre.coverImage %}
+                        <img class="media__img" src="{{ offre.coverImage.url }}" alt="" loading="lazy">
+                    {% else %}
+                        {{ ui.icon(theme[0], 56) }}
+                    {% endif %}
+                    <div class="media__badges">
+                        <span class="badge-discount">-{{ ui.discount(offre) }}%</span>
+                        {% if soldOut %}
+                            <span class="badge-stock badge-stock--low">Épuisé</span>
+                        {% elseif offre.quantityAvailable <= 3 %}
+                            <span class="badge-stock badge-stock--low">Plus que {{ offre.quantityAvailable }}</span>
+                        {% else %}
+                            <span class="badge-stock">{{ offre.quantityAvailable }} dispo</span>
+                        {% endif %}
+                    </div>
+                    {% if isMatch %}
+                        <span class="badge-match">{{ ui.icon('sparkles', 14) }} Pour vous</span>
+                    {% endif %}
+                </div>
+                <div class="offer-card__body">
+                    <span class="offer-card__shop">
+                        {% if app.user and app.user.hasFavorite(offre.commerce) %}<span class="fav-mark" title="Commerce favori">{{ ui.icon('heart', 13) }}</span>{% endif %}
+                        {{ offre.commerce.name }} · {{ category }}
+                        {{ ui.rating_badge(offre.commerce) }}
+                    </span>
+                    <h2 class="offer-card__title">{{ offre.title }}</h2>
+                    {{ ui.pref_tags(offre) }}
+                    <div class="offer-card__foot">
+                        <span class="meta">{{ ui.icon('clock', 16) }} {{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }}–{{ offre.pickupEnd|date('H:i') }}</span>
+                        <span class="price-tag">
+                            <strong>{{ ui.price(offre.discountedPrice) }}</strong>
+                            <del>{{ ui.price(offre.originalPrice) }}</del>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </section>
+
+    <div class="empty-state" id="no-results" {% if offres is not empty %}hidden{% endif %}>
+        <span class="empty-state__icon">{{ ui.icon('search', 28) }}</span>
+        <h2>{{ offres is empty ? 'Aucune offre pour le moment' : 'Aucun résultat' }}</h2>
+        <p>{{ offres is empty ? 'Les commerçants publient leurs paniers au fil de la journée, revenez un peu plus tard.' : 'Essayez un autre mot-clé, une autre catégorie ou un autre régime.' }}</p>
+    </div>
+
+    <script>
+        (() => {
+            const input = document.getElementById('offer-search');
+            const cards = [...document.querySelectorAll('.offer-card')];
+            const line = document.getElementById('results-line');
+            const empty = document.getElementById('no-results');
+            if (!cards.length) return;
+            const state = { category: '', pref: '' };
+
+            const apply = () => {
+                const q = input.value.trim().toLowerCase();
+                let shown = 0;
+                cards.forEach(card => {
+                    const okCat = !state.category || card.dataset.category === state.category;
+                    const okPref = !state.pref
+                        || (state.pref === 'mine' ? card.dataset.match === '1' : card.dataset.prefs.includes(',' + state.pref + ','));
+                    const okText = !q || card.dataset.search.includes(q);
+                    card.hidden = !(okCat && okPref && okText);
+                    if (!card.hidden) shown++;
+                });
+                line.textContent = shown + ' offre' + (shown > 1 ? 's' : '') + ' disponible' + (shown > 1 ? 's' : '');
+                empty.hidden = shown > 0;
+            };
+
+            input.addEventListener('input', apply);
+
+            document.querySelectorAll('.filters[data-group]').forEach(group => {
+                const key = group.dataset.group;
+                const buttons = [...group.querySelectorAll('.filter')];
+                buttons.forEach(btn => btn.addEventListener('click', () => {
+                    // Les régimes se désélectionnent en recliquant ; les catégories ont un bouton « Toutes ».
+                    const value = (key === 'pref' && state.pref === btn.dataset.value) ? '' : btn.dataset.value;
+                    state[key] = value;
+                    buttons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.value === value || (key === 'category' && !value && b.dataset.value === ''))));
+                    apply();
+                }));
+            });
+        })();
+    </script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Mes réservations{% endblock %}
+{% block main_class %}page--narrow{% endblock %}
+
+{% macro reservation_card(reservation) %}
+    {% import '_ui.html.twig' as ui %}
+    {% set offre = reservation.offer %}
+    {% set status = reservation.status.value %}
+    {% set isActive = status in ['pending', 'confirmed'] %}
+    {% set theme = ui.category_theme(offre.commerce.category)|trim|split('|') %}
+    {% set labels = {
+        pending: ['En attente', 'chip--accent'],
+        confirmed: ['Confirmée', ''],
+        collected: ['Récupérée', 'chip--neutral'],
+        cancelled: ['Annulée', 'chip--danger'],
+    } %}
+
+    <article class="res{{ isActive ? '' : ' res--past' }}">
+        <div class="media media--{{ theme[1] }}">
+            {% if offre.coverImage %}<img class="media__img" src="{{ offre.coverImage.url }}" alt="" loading="lazy">{% else %}{{ ui.icon(theme[0], 30) }}{% endif %}
+        </div>
+
+        <div class="res__main">
+            <div class="res__title">
+                <h3><a href="{{ path('app_offre_show', { id: offre.id }) }}">{{ offre.title }}</a></h3>
+                <span class="chip {{ labels[status][1] }}">{{ labels[status][0] }}</span>
+            </div>
+            <span class="muted">{{ offre.commerce.name }}</span>
+            <div class="res__metas">
+                <span class="meta">{{ ui.icon('clock', 16) }} {{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }}–{{ offre.pickupEnd|date('H:i') }}</span>
+                <span class="meta">{{ ui.icon('pin', 16) }} {{ offre.commerce.address }}</span>
+            </div>
+        </div>
+
+        <div class="res__side">
+            {% if isActive and reservation.pickupCode %}
+                <div class="pickup-code" title="À présenter au commerçant">
+                    <small>Code de retrait</small>
+                    <strong>{{ reservation.pickupCode }}</strong>
+                </div>
+            {% else %}
+                <span class="price-tag"><strong>{{ ui.price(offre.discountedPrice * reservation.quantity) }}</strong></span>
+            {% endif %}
+            {% if isActive %}
+                <form method="post" action="{{ path('app_reservation_cancel', { id: reservation.id }) }}" onsubmit="return confirm('Annuler cette réservation ?');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('cancel' ~ reservation.id) }}">
+                    <button class="btn btn--danger btn--sm" type="submit">{{ ui.icon('x', 16) }} Annuler</button>
+                </form>
+            {% elseif status == 'collected' %}
+                {% set myReview = app.user.reviewFor(offre.commerce) %}
+                <a class="btn {{ myReview ? 'btn--ghost' : 'btn--soft' }} btn--sm" href="{{ path('app_review_form', { id: offre.commerce.id }) }}">
+                    {{ ui.icon('star', 16) }} {{ myReview ? 'Modifier mon avis' : 'Donner mon avis' }}
+                </a>
+            {% endif %}
+        </div>
+    </article>
+{% endmacro %}
+
+{% block body %}
+    {% set active = reservations|filter(r => r.status.value in ['pending', 'confirmed']) %}
+    {% set past = reservations|filter(r => r.status.value not in ['pending', 'confirmed']) %}
+
+    <header class="page-head">
+        <h1>Mes réservations</h1>
+        <p>Présentez votre code de retrait au commerçant pendant le créneau indiqué.</p>
+    </header>
+
+    {% if reservations is empty %}
+        <div class="empty-state">
+            <span class="empty-state__icon">{{ ui.icon('ticket', 28) }}</span>
+            <h2>Aucune réservation pour le moment</h2>
+            <p>Réservez un panier chez un commerçant près de chez vous : votre code de retrait apparaîtra ici.</p>
+            <a class="btn btn--primary" href="{{ path('app_home') }}">{{ ui.icon('compass', 18) }} Découvrir les offres</a>
+        </div>
+    {% else %}
+        <section class="section" aria-labelledby="res-active">
+            <h2 class="section-title" id="res-active">À venir <span class="count">{{ active|length }}</span></h2>
+            {% if active is empty %}
+                <p class="muted">Aucune réservation en cours. <a href="{{ path('app_home') }}">Voir les offres</a></p>
+            {% else %}
+                <div class="res-list">
+                    {% for reservation in active %}{{ _self.reservation_card(reservation) }}{% endfor %}
+                </div>
+            {% endif %}
+        </section>
+
+        {% if past is not empty %}
+            <section class="section" aria-labelledby="res-past">
+                <h2 class="section-title" id="res-past">Historique</h2>
+                <div class="res-list">
+                    {% for reservation in past %}{{ _self.reservation_card(reservation) }}{% endfor %}
+                </div>
+            </section>
+        {% endif %}
+    {% endif %}
+{% endblock %}

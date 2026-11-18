@@ -1,0 +1,172 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}{{ offre.title }}{% endblock %}
+
+{% block body %}
+    {% set category = offre.commerce.category|default('Commerce') %}
+    {% set theme = ui.category_theme(category)|trim|split('|') %}
+    {% set soldOut = offre.quantityAvailable < 1 %}
+    {% set commerce = offre.commerce %}
+    {# Photos de l'offre d'abord, puis celles du commerce. #}
+    {% set images = offre.galleryImages %}
+    {% set count = images|length %}
+
+    <a class="back-link" href="{{ path('app_home') }}">{{ ui.icon('arrow-left', 18) }} Retour aux offres</a>
+
+    <header class="detail-head">
+        <div class="detail__tags">
+            <span class="chip">{{ category }}</span>
+            <span class="chip chip--accent">{{ ui.icon('leaf', 14) }} Offre locale</span>
+            {{ ui.pref_tags(offre) }}
+        </div>
+        <h1>{{ offre.title }}</h1>
+        <p class="detail-head__meta">
+            <span>{{ ui.icon('store', 16) }} {{ commerce.name }}</span>
+            {% if commerce.averageRating is not null %}
+                <span>{{ ui.icon('star', 16) }} {{ commerce.averageRating|number_format(1, ',') }} · {{ commerce.reviews|length }} avis</span>
+            {% endif %}
+            <span>{{ ui.icon('pin', 16) }} {{ commerce.address }}</span>
+        </p>
+    </header>
+
+    {# ---------- Galerie : mosaïque (1 grande + 2 petites), carrousel sur mobile ---------- #}
+    {% if images is empty %}
+        <div class="media media--{{ theme[1] }} mosaic-empty">
+            {{ ui.icon(theme[0], 96) }}
+            <div class="media__badges"><span class="badge-discount">-{{ ui.discount(offre) }}%</span></div>
+        </div>
+    {% else %}
+        <div class="mosaic-wrap" data-gallery>
+            <div class="mosaic mosaic--{{ min(count, 3) }}" aria-label="Photos de l’offre">
+                {% for image in images %}
+                    <button class="mosaic__item{{ loop.index > 3 ? ' mosaic__item--extra' : '' }}" type="button" data-gallery-open="{{ loop.index0 }}"
+                            aria-label="Agrandir la photo {{ loop.index }} sur {{ count }}">
+                        <img src="{{ image.url }}" alt="{{ offre.title }} — photo {{ loop.index }}" {{ loop.first ? 'fetchpriority="high"' : 'loading="lazy"' }}>
+                    </button>
+                {% endfor %}
+            </div>
+
+            {# Hors de la zone qui défile, pour rester visibles sur le carrousel mobile. #}
+            <div class="media__badges"><span class="badge-discount">-{{ ui.discount(offre) }}%</span></div>
+            {% if count > 1 %}
+                <span class="mosaic__counter" aria-hidden="true"><span data-mosaic-current>1</span> / {{ count }}</span>
+                <button class="mosaic__all" type="button" data-gallery-open="0">{{ ui.icon('image-plus', 16) }} Voir les {{ count }} photos</button>
+            {% endif %}
+
+            <dialog class="lightbox" aria-label="Photos en plein écran">
+                <div class="lightbox__top">
+                    <span class="lightbox__counter"><span data-gallery-current>1</span> / {{ count }}</span>
+                    <button class="lightbox__close" type="button" data-lightbox-close aria-label="Fermer">{{ ui.icon('x', 24) }}</button>
+                </div>
+                <div class="lightbox__stage">
+                    {% if count > 1 %}
+                        <button class="lightbox__nav" type="button" data-gallery-prev aria-label="Photo précédente">{{ ui.icon('chevron-left', 28) }}</button>
+                    {% endif %}
+                    <img class="lightbox__img" src="{{ (images|first).url }}" alt="">
+                    {% if count > 1 %}
+                        <button class="lightbox__nav" type="button" data-gallery-next aria-label="Photo suivante">{{ ui.icon('chevron-right', 28) }}</button>
+                    {% endif %}
+                </div>
+                {% if count > 1 %}
+                    <div class="lightbox__thumbs">
+                        {% for image in images %}
+                            <button class="lightbox__thumb{{ loop.first ? ' is-active' : '' }}" type="button" data-gallery-goto="{{ loop.index0 }}" aria-label="Photo {{ loop.index }}">
+                                <img src="{{ image.url }}" alt="" loading="lazy" data-full="{{ image.url }}">
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </dialog>
+        </div>
+    {% endif %}
+
+    {# ---------- Contenu + encadré de réservation ---------- #}
+    <div class="detail">
+        <div class="detail__info">
+            <section>
+                <h2 class="section-title">Le panier</h2>
+                <p class="detail__desc">{{ offre.description|default('Découvrez cette offre proposée par votre commerce local.') }}</p>
+            </section>
+
+            <ul class="facts">
+                <li>
+                    <span class="facts__icon">{{ ui.icon('clock', 20) }}</span>
+                    <span>
+                        <small>Créneau de retrait</small>
+                        <strong>{{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }} – {{ offre.pickupEnd|date('H:i') }}</strong>
+                    </span>
+                </li>
+                <li>
+                    <span class="facts__icon">{{ ui.icon('package', 20) }}</span>
+                    <span>
+                        <small>Disponibilité</small>
+                        <strong>{% if soldOut %}Épuisé{% else %}{{ offre.quantityAvailable }} panier{{ offre.quantityAvailable > 1 ? 's' : '' }} restant{{ offre.quantityAvailable > 1 ? 's' : '' }}{% endif %}</strong>
+                    </span>
+                </li>
+                <li>
+                    <span class="facts__icon">{{ ui.icon('pin', 20) }}</span>
+                    <span>
+                        <small>Adresse</small>
+                        <strong>{{ commerce.address }}</strong>
+                    </span>
+                </li>
+            </ul>
+
+            <section class="card shop-card" aria-label="Le commerce">
+                <div class="shop-card__top">
+                    <span class="eyebrow" style="margin: 0;">{{ ui.icon('store', 16) }} Le commerce</span>
+                    {% if app.user %}
+                        {% set isFav = app.user.hasFavorite(commerce) %}
+                        <form method="post" action="{{ path('app_favorite_toggle', { id: commerce.id }) }}" data-favorite-form>
+                            <input type="hidden" name="_token" value="{{ csrf_token('favorite' ~ commerce.id) }}">
+                            <button class="fav-btn{{ isFav ? ' is-fav' : '' }}" type="submit" aria-pressed="{{ isFav ? 'true' : 'false' }}"
+                                    data-label-on="Dans mes favoris" data-label-off="Ajouter aux favoris">
+                                {{ ui.icon('heart', 18) }} <span data-fav-label>{{ isFav ? 'Dans mes favoris' : 'Ajouter aux favoris' }}</span>
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+                <h2>{{ commerce.name }}</h2>
+                {% if commerce.averageRating is not null %}
+                    <span class="rating-line">{{ ui.stars(commerce.averageRating) }} <strong>{{ commerce.averageRating|number_format(1, ',') }}</strong> <span class="muted">· {{ commerce.reviews|length }} avis</span></span>
+                {% endif %}
+                {% if commerce.description %}<p>{{ commerce.description }}</p>{% endif %}
+                <span class="shop-card__row">{{ ui.icon('pin', 18) }} {{ commerce.address }}</span>
+                {% if commerce.phone %}
+                    <a class="shop-card__row" href="tel:{{ commerce.phone|replace({' ': ''}) }}" style="text-decoration: none;">{{ ui.icon('phone', 18) }} {{ commerce.phone }}</a>
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="booking card" aria-label="Réservation">
+            <div class="price-block">
+                <strong>{{ ui.price(offre.discountedPrice) }}</strong>
+                <del>{{ ui.price(offre.originalPrice) }}</del>
+            </div>
+            <span class="chip chip--accent">Vous économisez {{ ui.price(offre.originalPrice - offre.discountedPrice) }}</span>
+            <p class="booking__slot">{{ ui.icon('clock', 16) }} {{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }} – {{ offre.pickupEnd|date('H:i') }}</p>
+
+            {% if soldOut %}
+                <button class="btn btn--lg btn--block" type="button" disabled>Épuisé</button>
+            {% elseif app.user %}
+                <form method="post" action="{{ path('app_reservation_create', { id: offre.id }) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('reserve' ~ offre.id) }}">
+                    <button class="btn btn--primary btn--lg btn--block" type="submit">{{ ui.icon('ticket', 20) }} Réserver ce panier</button>
+                </form>
+                <p class="help" style="text-align: center;">Code de retrait immédiat. Paiement sur place.</p>
+            {% else %}
+                <a class="btn btn--primary btn--lg btn--block" href="{{ path('app_login') }}">Se connecter pour réserver</a>
+            {% endif %}
+            {% if not soldOut and offre.quantityAvailable <= 3 %}
+                <p class="booking__low">Plus que {{ offre.quantityAvailable }} panier{{ offre.quantityAvailable > 1 ? 's' : '' }} !</p>
+            {% endif %}
+        </aside>
+    </div>
+
+    {{ include('_reviews.html.twig', {
+        reviews: commerce.reviews|sort((a, b) => b.createdAt <=> a.createdAt)|slice(0, 12),
+        average: commerce.averageRating,
+        title: 'Avis sur ' ~ commerce.name,
+    }) }}
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Espace commerçant{% endblock %}
+
+{% macro offer_row(offre, online) %}
+    {% import '_ui.html.twig' as ui %}
+    {% set total = offre.quantityTotal ?: 1 %}
+    {% set cancelled = offre.status|filter(s => s.value == 'cancelled')|length > 0 %}
+    <div class="offer-row">
+        <div class="offer-row__title">
+            <strong>{{ offre.title }}</strong>
+            <span class="muted">{{ offre.commerce.name }}</span>
+        </div>
+        <span>
+            <strong>{{ ui.price(offre.discountedPrice) }}</strong>
+            <del class="muted">{{ ui.price(offre.originalPrice) }}</del>
+        </span>
+        <span>
+            {{ offre.reservedCount }}/{{ offre.quantityTotal }} réservé{{ offre.reservedCount > 1 ? 's' : '' }}
+            <span class="stock-bar"><span style="width: {{ (offre.reservedCount / total * 100)|round }}%"></span></span>
+        </span>
+        <span>{{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }}–{{ offre.pickupEnd|date('H:i') }}</span>
+        <span>
+            {% if cancelled %}
+                <span class="chip chip--neutral">Retirée</span>
+            {% elseif not online %}
+                <span class="chip chip--neutral">Terminée</span>
+            {% elseif offre.quantityAvailable < 1 %}
+                <span class="chip chip--accent">Tout réservé</span>
+            {% else %}
+                <span class="chip">En ligne</span>
+            {% endif %}
+        </span>
+        <div class="offer-row__actions">
+            {% if online %}
+                <a class="btn btn--ghost btn--sm" href="{{ path('app_merchant_offre_edit', { id: offre.id }) }}">Modifier</a>
+                <form method="post" action="{{ path('app_merchant_offre_close', { id: offre.id }) }}" onsubmit="return confirm('Retirer cette offre ? Elle ne sera plus visible par les clients. Les réservations existantes restent valables.');">
+                    <input type="hidden" name="_token" value="{{ csrf_token('close' ~ offre.id) }}">
+                    <button class="btn btn--danger btn--sm" type="submit" title="Retirer l’offre">{{ ui.icon('x', 16) }}<span class="sr-only">Retirer</span></button>
+                </form>
+            {% else %}
+                <a class="btn btn--ghost btn--sm" href="{{ path('app_merchant_offre_new', { from: offre.id }) }}">Republier</a>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% block body %}
+    {% set single = commerces|length == 1 ? commerces|first : null %}
+
+    {% if commerces is empty %}
+        <div class="empty-state">
+            <span class="empty-state__icon">{{ ui.icon('store', 28) }}</span>
+            <h2>Inscrivez votre commerce</h2>
+            <p>Créez la fiche de votre commerce pour commencer à vendre vos invendus.</p>
+            <a href="{{ path('app_commerce_register') }}" class="btn btn--primary">{{ ui.icon('plus', 18) }} Inscrire mon commerce</a>
+        </div>
+    {% else %}
+        <header class="page-head page-head--row">
+            <div>
+                <p class="eyebrow" style="margin-bottom: 8px;">{{ ui.icon('store', 16) }} Espace commerçant</p>
+                <h1>{{ single ? single.name : 'Mon espace commerce' }}</h1>
+                <p>{{ upcoming is empty ? 'Aucun retrait en attente pour le moment.' : upcoming|length ~ ' retrait' ~ (upcoming|length > 1 ? 's' : '') ~ ' à préparer.' }}</p>
+            </div>
+            <div class="head-actions">
+                {% if single %}
+                    <a href="{{ path('app_merchant_commerce_edit', { id: single.id }) }}" class="btn btn--ghost">Modifier mon commerce</a>
+                {% endif %}
+                <a href="{{ path('app_merchant_offre_new') }}" class="btn btn--primary">{{ ui.icon('plus', 18) }} Publier une offre</a>
+            </div>
+        </header>
+
+        <section class="kpis" aria-label="Indicateurs">
+            <div class="kpi">
+                <span class="kpi__icon">{{ ui.icon('bag', 20) }}</span>
+                <strong>{{ onlineOffres|length }}</strong>
+                <span>offre{{ onlineOffres|length > 1 ? 's' : '' }} en ligne</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__icon">{{ ui.icon('ticket', 20) }}</span>
+                <strong>{{ upcoming|length }}</strong>
+                <span>retrait{{ upcoming|length > 1 ? 's' : '' }} à venir</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__icon">{{ ui.icon('leaf', 20) }}</span>
+                <strong>{{ stats.saved }}</strong>
+                <span>panier{{ stats.saved > 1 ? 's' : '' }} sauvé{{ stats.saved > 1 ? 's' : '' }}</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__icon">{{ ui.icon('check', 20) }}</span>
+                <strong>{{ ui.price(stats.revenue) }}</strong>
+                <span>de ventes encaissées</span>
+            </div>
+            <div class="kpi">
+                <span class="kpi__icon">{{ ui.icon('star', 20) }}</span>
+                <strong>{{ averageRating is not null ? averageRating|number_format(1, ',') ~ ' / 5' : '—' }}</strong>
+                <span>{{ reviewCount }} avis client{{ reviewCount > 1 ? 's' : '' }}</span>
+            </div>
+        </section>
+
+        <div class="dash">
+            <section class="card dash__main" aria-labelledby="upcoming-title">
+                <div class="card-head">
+                    <h2 id="upcoming-title">Retraits à venir</h2>
+                </div>
+                {% if upcoming is empty %}
+                    <p class="muted">Quand un client réserve, il apparaît ici avec son code de retrait.</p>
+                {% else %}
+                    <ul class="pickups">
+                        {% for r in upcoming %}
+                            <li class="pickup">
+                                <span class="pickup__code">{{ r.pickupCode }}</span>
+                                <div class="pickup__info">
+                                    <strong>{{ r.quantity }} × {{ r.offer.title }}</strong>
+                                    <span class="muted">{{ r.user.userIdentifier }} · {{ ui.pickup_day(r.offer.pickupStart) }}, {{ r.offer.pickupStart|date('H:i') }}–{{ r.offer.pickupEnd|date('H:i') }}</span>
+                                </div>
+                                <form method="post" action="{{ path('app_merchant_reservation_collect', { id: r.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('collect' ~ r.id) }}">
+                                    <button class="btn btn--soft btn--sm" type="submit">{{ ui.icon('check', 16) }} Remis</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </section>
+
+            <aside class="card validate" aria-labelledby="validate-title">
+                <h2 id="validate-title">Valider un retrait</h2>
+                <p class="muted">Saisissez le code présenté par le client.</p>
+                <form method="post" action="{{ path('app_merchant_pickup_validate') }}" class="form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('pickup_validate') }}">
+                    <div class="field">
+                        <label for="code">Code de retrait</label>
+                        <input class="code-input" id="code" name="code" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" maxlength="12" placeholder="A1B2C3" required>
+                    </div>
+                    <button class="btn btn--primary btn--block" type="submit">{{ ui.icon('check', 18) }} Valider</button>
+                </form>
+            </aside>
+        </div>
+
+        <section class="section" aria-labelledby="offers-title">
+            <div class="section-head">
+                <h2 class="section-title" id="offers-title">Mes offres en ligne <span class="count">{{ onlineOffres|length }}</span></h2>
+            </div>
+            {% if onlineOffres is empty %}
+                <div class="empty-state">
+                    <span class="empty-state__icon">{{ ui.icon('bag', 28) }}</span>
+                    <h2>Aucune offre en ligne</h2>
+                    <p>Il vous reste des invendus aujourd’hui ? Publiez un panier en moins d’une minute.</p>
+                    <a href="{{ path('app_merchant_offre_new') }}" class="btn btn--primary">{{ ui.icon('plus', 18) }} Publier une offre</a>
+                </div>
+            {% else %}
+                <div class="card shop-panel">
+                    <div class="offer-rows" style="border-top: 0;">
+                        <div class="offer-row offer-row--head" aria-hidden="true">
+                            <span>Offre</span><span>Prix</span><span>Réservations</span><span>Retrait</span><span>Statut</span><span></span>
+                        </div>
+                        {% for offre in onlineOffres %}{{ _self.offer_row(offre, true) }}{% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+
+        {% if pastOffres is not empty %}
+            <details class="section past">
+                <summary class="section-title">Offres passées</summary>
+                <div class="card shop-panel">
+                    <div class="offer-rows" style="border-top: 0;">
+                        {% for offre in pastOffres %}{{ _self.offer_row(offre, false) }}{% endfor %}
+                    </div>
+                </div>
+            </details>
+        {% endif %}
+
+        <div class="section">
+            {{ include('_reviews.html.twig', {
+                reviews: reviews,
+                average: averageRating,
+                title: 'Derniers avis',
+                show_commerce: commerces|length > 1,
+            }) }}
+        </div>
+
+        <section class="section" aria-labelledby="shops-title">
+            <h2 class="section-title" id="shops-title">{{ single ? 'Mon commerce' : 'Mes commerces' }}</h2>
+            <div class="shops">
+                {% for commerce in commerces %}
+                    <div class="card shop-mini">
+                        <div>
+                            <strong>{{ commerce.name }}</strong>
+                            <span class="chip chip--neutral">{{ commerce.category }}</span>
+                        </div>
+                        <span class="meta">{{ ui.icon('pin', 16) }} {{ commerce.address }}</span>
+                        {% if commerce.phone %}<span class="meta">{{ ui.icon('phone', 16) }} {{ commerce.phone }}</span>{% endif %}
+                        <a href="{{ path('app_merchant_commerce_edit', { id: commerce.id }) }}">Modifier les informations</a>
+                    </div>
+                {% endfor %}
+                <a class="shop-mini shop-mini--add" href="{{ path('app_commerce_register') }}">
+                    {{ ui.icon('plus', 20) }} Ajouter un autre commerce
+                </a>
+            </div>
+        </section>
+    {% endif %}
+{% endblock %}

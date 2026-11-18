@@ -1,0 +1,65 @@
+{#
+    Bloc d'avis façon cartes (avatar, nom, date relative, étoiles, texte repliable).
+    Paramètres : reviews (liste de Review), average (float|null), title (string), show_commerce (bool)
+#}
+{% import '_ui.html.twig' as ui %}
+{% set count = reviews|length %}
+{% set palette = ['#7c4dff', '#1e88e5', '#00897b', '#e53935', '#f4511e', '#8e24aa', '#3949ab', '#43a047'] %}
+
+<section class="reviews-block" aria-labelledby="reviews-title">
+    <div class="reviews-block__head">
+        <h2 id="reviews-title">{{ title|default('Avis clients') }}</h2>
+        {% if average is not null %}
+            <div class="reviews-summary">
+                <strong>{{ average|number_format(1, ',') }}</strong>
+                <div>
+                    {{ ui.stars(average, 18) }}
+                    <span class="muted">{{ count }} avis vérifié{{ count > 1 ? 's' : '' }}</span>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if reviews is empty %}
+        <p class="muted">Pas encore d’avis. Les clients peuvent en laisser un après avoir récupéré leur panier.</p>
+    {% else %}
+        <div class="review-cards" tabindex="0" aria-label="Avis clients, faire défiler horizontalement">
+            {% for review in reviews %}
+                {% set initial = review.user.mail|slice(0, 1)|upper %}
+                {% set long = review.comment and review.comment|length > 140 %}
+                <article class="review-card">
+                    <header class="review-card__head">
+                        <span class="review-card__avatar" style="background: {{ palette[review.user.id % palette|length] }}" aria-hidden="true">{{ initial }}</span>
+                        <div class="review-card__who">
+                            {# Pas d'e-mail publié : initiale uniquement. #}
+                            <strong>{{ initial }}.{% if show_commerce|default(false) %} · {{ review.commerce.name }}{% endif %}</strong>
+                            <time datetime="{{ review.createdAt|date('c') }}" title="{{ review.createdAt|date('d/m/Y') }}">{{ ui.time_ago(review.createdAt) }}</time>
+                        </div>
+                        <span class="review-card__verified" title="Avis d’un client ayant récupéré un panier">{{ ui.icon('check', 18) }}</span>
+                    </header>
+
+                    {{ ui.stars(review.rating, 18) }}
+
+                    {% if review.comment %}
+                        <p class="review-card__text{{ long ? ' is-clamped' : '' }}" id="review-{{ review.id }}">{{ review.comment }}</p>
+                        {% if long %}
+                            <button class="review-card__more" type="button" aria-expanded="false" aria-controls="review-{{ review.id }}">Voir la suite »</button>
+                        {% endif %}
+                    {% else %}
+                        <p class="review-card__text muted">Note sans commentaire.</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+
+        <script>
+            document.querySelectorAll('.review-card__more').forEach(btn => btn.addEventListener('click', () => {
+                const text = document.getElementById(btn.getAttribute('aria-controls'));
+                const open = btn.getAttribute('aria-expanded') === 'true';
+                text.classList.toggle('is-clamped', open);
+                btn.setAttribute('aria-expanded', String(!open));
+                btn.textContent = open ? 'Voir la suite »' : 'Réduire';
+            }));
+        </script>
+    {% endif %}
+</section>

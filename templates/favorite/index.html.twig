@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Mes favoris{% endblock %}
+
+{% block body %}
+    <header class="page-head">
+        <h1>Mes favoris</h1>
+        <p>Vos commerces préférés et leurs paniers du moment. Vous êtes prévenu dès qu’ils publient une offre.</p>
+    </header>
+
+    {% if favorites is empty %}
+        <div class="empty-state">
+            <span class="empty-state__icon">{{ ui.icon('heart', 28) }}</span>
+            <h2>Aucun favori pour le moment</h2>
+            <p>Sur la page d’une offre, appuyez sur « Ajouter aux favoris » pour suivre un commerce.</p>
+            <a class="btn btn--primary" href="{{ path('app_home') }}">{{ ui.icon('compass', 18) }} Découvrir les offres</a>
+        </div>
+    {% else %}
+        <div class="fav-list">
+            {% for favorite in favorites %}
+                {% set commerce = favorite.commerce %}
+                {% set theme = ui.category_theme(commerce.category)|trim|split('|') %}
+                {% set online = commerce.offres|filter(o => o.online and o.quantityAvailable > 0) %}
+                <section class="card fav">
+                    <div class="fav__head">
+                        <div class="media media--{{ theme[1] }} fav__media">
+                            {% if commerce.coverImage %}<img class="media__img" src="{{ commerce.coverImage.url }}" alt="" loading="lazy">{% else %}{{ ui.icon(theme[0], 28) }}{% endif %}
+                        </div>
+                        <div class="fav__info">
+                            <h2>{{ commerce.name }}</h2>
+                            <div class="fav__metas">
+                                <span class="chip chip--neutral">{{ commerce.category }}</span>
+                                {{ ui.rating_badge(commerce) }}
+                                <span class="meta">{{ ui.icon('pin', 16) }} {{ commerce.address }}</span>
+                            </div>
+                        </div>
+                        <form method="post" action="{{ path('app_favorite_toggle', { id: commerce.id }) }}" data-favorite-form data-remove-on-unfav=".fav">
+                            <input type="hidden" name="_token" value="{{ csrf_token('favorite' ~ commerce.id) }}">
+                            <button class="fav-btn is-fav" type="submit" aria-pressed="true" title="Retirer des favoris">
+                                {{ ui.icon('heart', 18) }}<span class="hide-sm">Retirer</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    {% if online is empty %}
+                        <p class="fav__empty">{{ ui.icon('bell', 16) }} Aucun panier en ce moment : on vous prévient dès qu’il y en a un.</p>
+                    {% else %}
+                        <ul class="fav__offers">
+                            {% for offre in online %}
+                                <li>
+                                    <a href="{{ path('app_offre_show', { id: offre.id }) }}">
+                                        <span>
+                                            <strong>{{ offre.title }}</strong>
+                                            <span class="meta">{{ ui.icon('clock', 14) }} {{ ui.pickup_day(offre.pickupStart) }}, {{ offre.pickupStart|date('H:i') }}–{{ offre.pickupEnd|date('H:i') }}</span>
+                                        </span>
+                                        <span class="price-tag"><strong>{{ ui.price(offre.discountedPrice) }}</strong><del>{{ ui.price(offre.originalPrice) }}</del></span>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </section>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

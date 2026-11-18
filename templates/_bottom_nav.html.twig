@@ -1,0 +1,21 @@
+{% import '_ui.html.twig' as ui %}
+{% set route = app.request.attributes.get('_route') %}
+<nav class="bottomnav" aria-label="Navigation mobile">
+    <a href="{{ path('app_home') }}" {% if route in ['app_home', 'app_offre_show'] %}aria-current="page"{% endif %}>
+        {{ ui.icon('compass', 22) }}<span>Découvrir</span>
+    </a>
+    <a href="{{ path('app_reservations') }}" {% if route in ['app_reservations', 'app_review_form'] %}aria-current="page"{% endif %}>
+        {{ ui.icon('ticket', 22) }}<span>Réservations</span>
+    </a>
+    <a href="{{ path('app_favorites') }}" {% if route == 'app_favorites' %}aria-current="page"{% endif %}>
+        {{ ui.icon('heart', 22) }}<span>Favoris</span>
+    </a>
+    {% if is_granted('ROLE_MERCHANT') %}
+        <a href="{{ path('app_merchant_dashboard') }}" {% if route starts with 'app_merchant' %}aria-current="page"{% endif %}>
+            {{ ui.icon('store', 22) }}<span>Commerce</span>
+        </a>
+    {% endif %}
+    <a href="{{ path('app_profile') }}" {% if route == 'app_profile' %}aria-current="page"{% endif %}>
+        {{ ui.icon('user', 22) }}<span>Profil</span>
+    </a>
+</nav>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}Anti-gaspi{% endblock %} · Anti-gaspi</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%230b5d4e%22 stroke-width=%222.2%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z%22/><path d=%22M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12%22/></svg>">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="/css/app.css">
+        <script src="/js/app.js" defer></script>
+        {% block stylesheets %}{% endblock %}
+        {% block javascripts %}{% endblock %}
+
+        {% set frankenphp_hot_reload = app.request.server.get('FRANKENPHP_HOT_RELOAD') %}
+        {% if frankenphp_hot_reload %}
+        <meta name="frankenphp-hot-reload:url" content="{{ frankenphp_hot_reload }}">
+        <script src="https://cdn.jsdelivr.net/npm/idiomorph"></script>
+        <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
+        {% endif %}
+    </head>
+    <body class="{% block body_class %}{% endblock %}{{ app.user ? ' has-bottom-nav' : '' }}">
+        <a class="skip-link" href="#main">Aller au contenu</a>
+        {% block header %}{{ include('_header.html.twig') }}{% endblock %}
+
+        <main id="main" class="page {% block main_class %}container{% endblock %}">
+            {% block flashes %}{{ include('_flashes.html.twig') }}{% endblock %}
+            {% block body %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <div class="container">
+                <span>Moins de gaspillage, plus de bons plans près de chez vous.</span>
+                {% if not is_granted('ROLE_MERCHANT') %}
+                    <a href="{{ path('app_commerce_register') }}">Vous êtes commerçant ?</a>
+                {% endif %}
+            </div>
+        </footer>
+
+        {% if app.user %}{{ include('_bottom_nav.html.twig') }}{% endif %}
+    </body>
+</html>

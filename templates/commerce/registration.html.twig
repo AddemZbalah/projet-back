@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Inscrire votre commerce{% endblock %}
+
+{% block body %}
+    <div class="auth">
+        <section class="auth__card auth__card--wide">
+            <header class="auth__head">
+                <p class="eyebrow" style="margin: 0 0 10px;">{{ ui.icon('store', 16) }} Espace commerçant</p>
+                <h1>Inscrire votre commerce</h1>
+                <p>
+                    {% if isAuthenticatedUser %}
+                        Présentez un nouveau commerce aux clients près de chez vous.
+                    {% else %}
+                        Créez votre compte commerçant et vendez vos invendus au lieu de les jeter.
+                    {% endif %}
+                </p>
+            </header>
+
+            {{ form_start(form, { attr: { class: 'form' } }) }}
+                {% if not isAuthenticatedUser %}
+                    {% for error in accountErrors %}
+                        <div class="alert alert--error" role="alert">{{ ui.icon('alert', 20) }}<span>{{ error }}</span></div>
+                    {% endfor %}
+
+                    <h2 style="margin-top: 0;">1. Votre compte</h2>
+                    <div class="field">
+                        <label for="mail">Adresse e-mail</label>
+                        <input type="email" id="mail" name="mail" value="{{ mail }}" autocomplete="email" required autofocus>
+                    </div>
+                    <div class="field">
+                        <label for="password">Mot de passe</label>
+                        <input type="password" id="password" name="password" minlength="8" autocomplete="new-password" required>
+                    </div>
+                    <div class="field">
+                        <label for="password_confirmation">Confirmer le mot de passe</label>
+                        <input type="password" id="password_confirmation" name="password_confirmation" minlength="8" autocomplete="new-password" required>
+                    </div>
+                    <input type="hidden" name="_account_token" value="{{ csrf_token('commerce_register') }}">
+
+                    <hr class="form-divider">
+                    <h2>2. Votre commerce</h2>
+                {% endif %}
+
+                {{ form_row(form.name) }}
+                {{ form_row(form.category) }}
+                {{ form_row(form.description) }}
+                {{ form_row(form.address) }}
+                {{ form_row(form.phone) }}
+
+                <hr class="form-divider">
+                {{ include('_photo_dropzone.html.twig', { field: form.photos }) }}
+
+                <button class="btn btn--primary btn--lg btn--block" type="submit">Enregistrer le commerce</button>
+            {{ form_end(form) }}
+
+            <p class="auth__foot">
+                {% if isAuthenticatedUser %}
+                    <a href="{{ path('app_merchant_dashboard') }}">Retour à mon espace</a>
+                {% else %}
+                    Vous êtes un particulier ? <a href="{{ path('app_register') }}">Créer un compte client</a>
+                {% endif %}
+            </p>
+        </section>
+    </div>
+{% endblock %}
