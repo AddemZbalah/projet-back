@@ -43,6 +43,12 @@ jobs:
         run: docker compose up --wait --no-build
       - name: Check HTTP reachability
         run: curl -v --fail-with-body http://localhost
+      - name: Lint PHP, Twig, YAML and container
+        run: |
+          docker compose exec -T php sh -c 'find src -name "*.php" -print0 | xargs -0 -n1 php -l > /dev/null'
+          docker compose exec -T php bin/console lint:twig templates
+          docker compose exec -T php bin/console lint:yaml config --parse-tags
+          docker compose exec -T php bin/console lint:container
       # Uncomment when the homepage is configured, or change the path to check
       # - name: Check HTTPS reachability
       #   run: curl -v --insecure --fail-with-body https://localhost
