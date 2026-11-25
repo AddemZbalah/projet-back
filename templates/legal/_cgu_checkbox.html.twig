@@ -1,0 +1,8 @@
+{# Case d'acceptation des CGU (formulaires d'inscription). Le contrôleur vérifie le champ `cgu`. #}
+<label class="consent">
+    <input type="checkbox" name="cgu" value="1" required>
+    <span>
+        J’accepte les <a href="{{ path('app_legal_cgu') }}" target="_blank">conditions générales d’utilisation</a>
+        et j’ai lu la <a href="{{ path('app_legal_privacy') }}" target="_blank">politique de confidentialité</a>.
+    </span>
+</label>

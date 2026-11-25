@@ -11,6 +11,7 @@ use App\Entity\User;
 use App\Enum\OffreStatus;
 use App\Enum\ReservationStatus;
 use App\Form\CommerceType;
+use App\Service\Geocoder;
 use App\Form\OffreType;
 use App\Repository\ReservationRepository;
 use App\Service\ImageUploader;
@@ -79,15 +80,6 @@ class MerchantDashboardController extends AbstractController
 
             return $this->redirectToRoute('app_merchant_dashboard');
         }
-
-        return $this->markCollected($reservation);
-    }
-
-    #[Route('/reservation/{id:reservation}/retiree', name: 'reservation_collect', methods: ['POST'])]
-    public function collect(Reservation $reservation, Request $request): Response
-    {
-        $this->assertCsrf('collect'.$reservation->getId(), $request);
-        $this->assertOwnsCommerce($reservation->getOffer()->getCommerce());
 
         return $this->markCollected($reservation);
     }
@@ -220,7 +212,7 @@ class MerchantDashboardController extends AbstractController
     }
 
     #[Route('/commerce/{id:commerce}/modifier', name: 'commerce_edit', methods: ['GET', 'POST'])]
-    public function editCommerce(Commerce $commerce, Request $request, ImageUploader $imageUploader): Response
+    public function editCommerce(Commerce $commerce, Request $request, ImageUploader $imageUploader, Geocoder $geocoder): Response
     {
         $this->assertOwnsCommerce($commerce);
 
@@ -232,6 +224,7 @@ class MerchantDashboardController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $this->applyImageChanges($commerce->getImages()->toArray(), $request, $imageUploader, $commerce->removeImage(...));
             $imageUploader->addToCommerce($commerce, $form->get('photos')->getData() ?? []);
+            $commerce->setLocation($geocoder->geocode($commerce->getAddress()));
             $this->em->flush();
             $this->addFlash('success', 'Informations du commerce mises à jour.');
 

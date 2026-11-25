@@ -1,9 +1,6 @@
+{# Barre du haut des visiteurs non connectés (les connectés ont la sidebar : _sidebar.html.twig). #}
 {% import '_ui.html.twig' as ui %}
 {% set route = app.request.attributes.get('_route') %}
-{% set activeReservations = app.user
-    ? app.user.reservations|filter(r => r.status.value in ['pending', 'confirmed'])|length
-    : 0 %}
-{% set unread = app.user ? app.user.unreadNotificationsCount : 0 %}
 
 <header class="topbar">
     <div class="container topbar__inner">
@@ -12,43 +9,14 @@
             <span class="logo__text">Anti<span>-gaspi</span></span>
         </a>
 
-        {% if app.user %}
-            <nav class="mainnav" aria-label="Navigation principale">
-                <a href="{{ path('app_home') }}" {% if route in ['app_home', 'app_offre_show'] %}aria-current="page"{% endif %}>
-                    {{ ui.icon('compass', 18) }} Découvrir
-                </a>
-                <a href="{{ path('app_reservations') }}" {% if route in ['app_reservations', 'app_review_form'] %}aria-current="page"{% endif %}>
-                    {{ ui.icon('ticket', 18) }} Réservations
-                    {% if activeReservations > 0 %}<span class="count" aria-label="{{ activeReservations }} en cours">{{ activeReservations }}</span>{% endif %}
-                </a>
-                <a href="{{ path('app_favorites') }}" {% if route == 'app_favorites' %}aria-current="page"{% endif %}>
-                    {{ ui.icon('heart', 18) }} Favoris
-                </a>
-                <a href="{{ path('app_profile') }}" {% if route == 'app_profile' %}aria-current="page"{% endif %}>
-                    {{ ui.icon('user', 18) }} Profil
-                </a>
-            </nav>
-
-            <div class="topbar__actions">
-                <a class="bell{{ route == 'app_notifications' ? ' is-active' : '' }}" href="{{ path('app_notifications') }}"
-                   aria-label="Notifications{{ unread > 0 ? ' (' ~ unread ~ ' non lue' ~ (unread > 1 ? 's' : '') ~ ')' : '' }}">
-                    {{ ui.icon('bell', 20) }}
-                    {% if unread > 0 %}<span class="bell__dot">{{ unread > 9 ? '9+' : unread }}</span>{% endif %}
-                </a>
-                {% if is_granted('ROLE_MERCHANT') %}
-                    <a class="btn btn--soft btn--sm" href="{{ path('app_merchant_dashboard') }}">{{ ui.icon('store', 18) }}<span class="hide-sm">Espace commerce</span></a>
-                {% endif %}
-                <a class="btn btn--ghost btn--sm" href="{{ path('app_logout') }}" title="Se déconnecter">{{ ui.icon('logout', 18) }}<span class="hide-sm">Déconnexion</span></a>
-            </div>
-        {% else %}
-            <div class="topbar__actions">
-                <a class="btn btn--ghost btn--sm hide-sm" href="{{ path('app_commerce_register') }}">{{ ui.icon('store', 18) }} Inscrire mon commerce</a>
-                {% if route != 'app_login' %}
-                    <a class="btn btn--primary btn--sm" href="{{ path('app_login') }}">Se connecter</a>
-                {% else %}
-                    <a class="btn btn--primary btn--sm" href="{{ path('app_register') }}">Créer un compte</a>
-                {% endif %}
-            </div>
-        {% endif %}
+        <div class="topbar__actions">
+            <a class="btn btn--ghost btn--sm" href="{{ path('app_nearby') }}" title="Autour de moi">{{ ui.icon('map', 18) }}<span class="hide-sm">Autour de moi</span></a>
+            <a class="btn btn--ghost btn--sm hide-sm" href="{{ path('app_commerce_register') }}">{{ ui.icon('store', 18) }} Inscrire mon commerce</a>
+            {% if route != 'app_login' %}
+                <a class="btn btn--primary btn--sm" href="{{ path('app_login') }}">Se connecter</a>
+            {% else %}
+                <a class="btn btn--primary btn--sm" href="{{ path('app_register') }}">Créer un compte</a>
+            {% endif %}
+        </div>
     </div>
 </header>

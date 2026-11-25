@@ -20,9 +20,10 @@
         <script src="https://cdn.jsdelivr.net/npm/frankenphp-hot-reload/+esm" type="module"></script>
         {% endif %}
     </head>
-    <body class="{% block body_class %}{% endblock %}{{ app.user ? ' has-bottom-nav' : '' }}">
+    <body class="{% block body_class %}{% endblock %}{{ app.user ? ' has-sidebar has-bottom-nav' : '' }}">
         <a class="skip-link" href="#main">Aller au contenu</a>
-        {% block header %}{{ include('_header.html.twig') }}{% endblock %}
+        {# Connecté : sidebar ; visiteur : barre du haut classique. #}
+        {% block header %}{{ include(app.user ? '_sidebar.html.twig' : '_header.html.twig') }}{% endblock %}
 
         <main id="main" class="page {% block main_class %}container{% endblock %}">
             {% block flashes %}{{ include('_flashes.html.twig') }}{% endblock %}
@@ -32,9 +33,14 @@
         <footer class="site-footer">
             <div class="container">
                 <span>Moins de gaspillage, plus de bons plans près de chez vous.</span>
-                {% if not is_granted('ROLE_MERCHANT') %}
-                    <a href="{{ path('app_commerce_register') }}">Vous êtes commerçant ?</a>
-                {% endif %}
+                <nav class="site-footer__links" aria-label="Liens légaux">
+                    <a href="{{ path('app_legal_cgu') }}">CGU</a>
+                    <a href="{{ path('app_legal_privacy') }}">Confidentialité</a>
+                    <a href="{{ path('app_legal_mentions') }}">Mentions légales</a>
+                    {% if not is_granted('ROLE_MERCHANT') %}
+                        <a href="{{ path('app_commerce_register') }}">Vous êtes commerçant ?</a>
+                    {% endif %}
+                </nav>
             </div>
         </footer>
 

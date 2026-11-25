@@ -105,20 +105,18 @@
                     <h2 id="upcoming-title">Retraits à venir</h2>
                 </div>
                 {% if upcoming is empty %}
-                    <p class="muted">Quand un client réserve, il apparaît ici avec son code de retrait.</p>
+                    <p class="muted">Quand un client réserve, il apparaît ici. Au retrait, saisissez le code qu’il vous présente.</p>
                 {% else %}
                     <ul class="pickups">
                         {% for r in upcoming %}
                             <li class="pickup">
-                                <span class="pickup__code">{{ r.pickupCode }}</span>
+                                {# Le code n'est pas affiché : c'est le client qui le présente au retrait. #}
+                                <span class="pickup__icon">{{ ui.icon('ticket', 20) }}</span>
                                 <div class="pickup__info">
                                     <strong>{{ r.quantity }} × {{ r.offer.title }}</strong>
                                     <span class="muted">{{ r.user.userIdentifier }} · {{ ui.pickup_day(r.offer.pickupStart) }}, {{ r.offer.pickupStart|date('H:i') }}–{{ r.offer.pickupEnd|date('H:i') }}</span>
                                 </div>
-                                <form method="post" action="{{ path('app_merchant_reservation_collect', { id: r.id }) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('collect' ~ r.id) }}">
-                                    <button class="btn btn--soft btn--sm" type="submit">{{ ui.icon('check', 16) }} Remis</button>
-                                </form>
+                                <span class="chip chip--accent">{{ ui.icon('clock', 14) }} En attente du code</span>
                             </li>
                         {% endfor %}
                     </ul>

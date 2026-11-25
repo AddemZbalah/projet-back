@@ -246,3 +246,37 @@ document.querySelectorAll('[data-gallery]').forEach((gallery) => {
         gallery.querySelectorAll('.mosaic__item').forEach((item) => observer.observe(item));
     }
 });
+
+/** Sidebar en tiroir sur mobile : ouverture depuis « Menu », fermeture par le fond, la croix ou Échap. */
+(() => {
+    const sidebar = document.getElementById('sidebar');
+    if (!sidebar) return;
+
+    const backdrop = document.querySelector('.sidebar-backdrop');
+    const openers = document.querySelectorAll('[data-sidebar-open]');
+    const mobile = window.matchMedia('(max-width: 760px)');
+    let lastFocus = null;
+
+    const setOpen = (open) => {
+        sidebar.classList.toggle('is-open', open);
+        document.body.classList.toggle('sidebar-open', open);
+        if (backdrop) backdrop.hidden = !open;
+        openers.forEach((btn) => btn.setAttribute('aria-expanded', String(open)));
+
+        if (open) {
+            lastFocus = document.activeElement;
+            sidebar.querySelector('a, button')?.focus();
+        } else if (lastFocus) {
+            lastFocus.focus();
+            lastFocus = null;
+        }
+    };
+
+    openers.forEach((btn) => btn.addEventListener('click', () => setOpen(!sidebar.classList.contains('is-open'))));
+    document.querySelectorAll('[data-sidebar-close]').forEach((el) => el.addEventListener('click', () => setOpen(false)));
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && sidebar.classList.contains('is-open')) setOpen(false);
+    });
+    // Repasse en mode bureau/tablette : on referme le tiroir.
+    mobile.addEventListener('change', (e) => { if (!e.matches) setOpen(false); });
+})();

@@ -1,0 +1,74 @@
+{# Navigation principale des utilisateurs connectés.
+   - Bureau (≥ 1024 px) : sidebar fixe à gauche.
+   - Tablette (761-1023 px) : rail d'icônes.
+   - Mobile (≤ 760 px) : barre du haut compacte + tiroir (ouvert depuis « Menu » de la bottom nav). #}
+{% import '_ui.html.twig' as ui %}
+{% set route = app.request.attributes.get('_route') %}
+{% set activeReservations = app.user.reservations|filter(r => r.status.value in ['pending', 'confirmed'])|length %}
+{% set unread = app.user.unreadNotificationsCount %}
+
+{% macro link(href, icon, label, active, badge = 0, badgeLabel = '') %}
+    {%- import '_ui.html.twig' as ui -%}
+    <a class="sidenav__link" href="{{ href }}" {% if active %}aria-current="page"{% endif %} title="{{ label }}">
+        <span class="sidenav__icon">
+            {{ ui.icon(icon, 20) }}
+            {% if badge > 0 %}<span class="sidenav__dot" aria-hidden="true"></span>{% endif %}
+        </span>
+        <span class="sidenav__label">{{ label }}</span>
+        {% if badge > 0 %}<span class="count sidenav__count" aria-label="{{ badgeLabel }}">{{ badge > 9 ? '9+' : badge }}</span>{% endif %}
+    </a>
+{% endmacro %}
+{% import _self as side %}
+
+{# Barre du haut, uniquement sur mobile. #}
+<header class="mobilebar">
+    <a class="logo" href="{{ path('app_home') }}">
+        <span class="logo__mark">{{ ui.icon('leaf', 20) }}</span>
+        <span class="logo__text">Anti<span>-gaspi</span></span>
+    </a>
+    <a class="bell{{ route == 'app_notifications' ? ' is-active' : '' }}" href="{{ path('app_notifications') }}"
+       aria-label="Notifications{{ unread > 0 ? ' (' ~ unread ~ ' non lue' ~ (unread > 1 ? 's' : '') ~ ')' : '' }}">
+        {{ ui.icon('bell', 20) }}
+        {% if unread > 0 %}<span class="bell__dot">{{ unread > 9 ? '9+' : unread }}</span>{% endif %}
+    </a>
+</header>
+
+<div class="sidebar-backdrop" data-sidebar-close hidden></div>
+
+<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+    <div class="sidebar__head">
+        <a class="logo" href="{{ path('app_home') }}">
+            <span class="logo__mark">{{ ui.icon('leaf', 20) }}</span>
+            <span class="logo__text">Anti<span>-gaspi</span></span>
+        </a>
+        <button class="sidebar__close" type="button" data-sidebar-close aria-label="Fermer le menu">{{ ui.icon('x', 22) }}</button>
+    </div>
+
+    <nav class="sidenav">
+        <p class="sidenav__title">Explorer</p>
+        {{ side.link(path('app_home'), 'compass', 'Découvrir', route in ['app_home', 'app_offre_show']) }}
+        {{ side.link(path('app_nearby'), 'map', 'Autour de moi', route == 'app_nearby') }}
+
+        <p class="sidenav__title">Mon compte</p>
+        {{ side.link(path('app_reservations'), 'ticket', 'Réservations', route in ['app_reservations', 'app_review_form'], activeReservations, activeReservations ~ ' en cours') }}
+        {{ side.link(path('app_favorites'), 'heart', 'Favoris', route == 'app_favorites') }}
+        {{ side.link(path('app_notifications'), 'bell', 'Notifications', route == 'app_notifications', unread, unread ~ ' non lue' ~ (unread > 1 ? 's' : '')) }}
+        {{ side.link(path('app_profile'), 'user', 'Profil', route == 'app_profile') }}
+
+        {% if is_granted('ROLE_MERCHANT') %}
+            <p class="sidenav__title">Mon commerce</p>
+            {{ side.link(path('app_merchant_dashboard'), 'store', 'Espace commerce', route starts with 'app_merchant') }}
+        {% endif %}
+    </nav>
+
+    <div class="sidebar__foot">
+        <span class="sidebar__user" title="{{ app.user.mail }}">
+            <span class="sidebar__avatar" aria-hidden="true">{{ app.user.mail|first|upper }}</span>
+            <span class="sidebar__mail">{{ app.user.mail }}</span>
+        </span>
+        <a class="sidenav__link sidenav__link--muted" href="{{ path('app_logout') }}" title="Se déconnecter">
+            <span class="sidenav__icon">{{ ui.icon('logout', 20) }}</span>
+            <span class="sidenav__label">Déconnexion</span>
+        </a>
+    </div>
+</aside>

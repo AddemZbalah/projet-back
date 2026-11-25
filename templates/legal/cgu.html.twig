@@ -1,0 +1,78 @@
+{% extends 'legal/_layout.html.twig' %}
+
+{% block title %}Conditions générales d’utilisation{% endblock %}
+{% block legal_title %}Conditions générales d’utilisation{% endblock %}
+
+{% block legal_toc %}
+    <li><a href="#objet">Objet</a></li>
+    <li><a href="#compte">Création de compte</a></li>
+    <li><a href="#reservation">Réservation et retrait</a></li>
+    <li><a href="#commercants">Engagements des commerçants</a></li>
+    <li><a href="#avis">Avis</a></li>
+    <li><a href="#responsabilite">Responsabilité</a></li>
+    <li><a href="#resiliation">Suspension et suppression</a></li>
+    <li><a href="#modification">Modification des CGU</a></li>
+    <li><a href="#droit">Droit applicable</a></li>
+{% endblock %}
+
+{% block legal_content %}
+    <section id="objet">
+        <h2>1. Objet</h2>
+        <p>Les présentes conditions générales d’utilisation (« CGU ») encadrent l’utilisation de la plateforme Anti-gaspi, qui permet aux commerces de proximité de proposer leurs invendus à prix réduit sous forme de paniers, et aux particuliers de les réserver puis de les retirer en magasin.</p>
+        <p>L’inscription sur la plateforme implique l’acceptation pleine et entière des présentes CGU.</p>
+    </section>
+
+    <section id="compte">
+        <h2>2. Création de compte</h2>
+        <p>La réservation d’un panier nécessite un compte. L’utilisateur s’engage à fournir une adresse e-mail valide et à garder son mot de passe confidentiel. Toute action réalisée depuis son compte est réputée effectuée par lui.</p>
+        <p>Un commerçant peut inscrire son commerce depuis la page dédiée. Il certifie être habilité à représenter ce commerce et que les informations fournies (nom, adresse, téléphone, photos) sont exactes.</p>
+    </section>
+
+    <section id="reservation">
+        <h2>3. Réservation et retrait</h2>
+        <ul>
+            <li>Chaque réservation génère un <strong>code de retrait</strong> personnel, à présenter au commerçant pendant le créneau indiqué.</li>
+            <li>Le paiement s’effectue <strong>sur place</strong>, directement auprès du commerçant, au prix affiché lors de la réservation.</li>
+            <li>Le contenu exact d’un panier dépend des invendus du jour et peut varier par rapport à la description.</li>
+            <li>Un panier non retiré pendant le créneau peut être remis en vente ou donné par le commerçant.</li>
+            <li>L’utilisateur peut annuler sa réservation depuis son espace « Réservations » tant que le panier n’a pas été retiré.</li>
+        </ul>
+    </section>
+
+    <section id="commercants">
+        <h2>4. Engagements des commerçants</h2>
+        <p>Le commerçant s’engage à :</p>
+        <ul>
+            <li>proposer uniquement des produits propres à la consommation et conformes aux règles d’hygiène et de sécurité alimentaire ;</li>
+            <li>indiquer des prix, quantités et créneaux de retrait exacts ;</li>
+            <li>remettre le panier à l’utilisateur qui présente un code de retrait valide pendant le créneau ;</li>
+            <li>informer correctement des allergènes et régimes alimentaires lorsqu’il les renseigne.</li>
+        </ul>
+    </section>
+
+    <section id="avis">
+        <h2>5. Avis</h2>
+        <p>Après un retrait, l’utilisateur peut laisser un avis sur le commerce. Les avis doivent être sincères, respectueux et liés à une expérience réelle. Les avis injurieux, diffamatoires ou hors sujet peuvent être supprimés.</p>
+    </section>
+
+    <section id="responsabilite">
+        <h2>6. Responsabilité</h2>
+        <p>Anti-gaspi met en relation commerçants et utilisateurs. La vente est conclue directement entre eux : le commerçant reste seul responsable de la qualité et de la conformité des produits remis.</p>
+        <p>La plateforme s’efforce d’assurer un service accessible en continu, sans pouvoir garantir l’absence d’interruption, notamment pour maintenance.</p>
+    </section>
+
+    <section id="resiliation">
+        <h2>7. Suspension et suppression du compte</h2>
+        <p>L’utilisateur peut demander la suppression de son compte à tout moment. En cas de manquement aux présentes CGU (fausses informations, abus, réservations non retirées à répétition, avis abusifs), un compte peut être suspendu ou supprimé.</p>
+    </section>
+
+    <section id="modification">
+        <h2>8. Modification des CGU</h2>
+        <p>Les CGU peuvent être modifiées pour suivre l’évolution du service. La version applicable est celle en ligne au moment de l’utilisation de la plateforme.</p>
+    </section>
+
+    <section id="droit">
+        <h2>9. Droit applicable</h2>
+        <p>Les présentes CGU sont soumises au droit français. Pour le traitement de vos données personnelles, consultez notre <a href="{{ path('app_legal_privacy') }}">politique de confidentialité</a>.</p>
+    </section>
+{% endblock %}

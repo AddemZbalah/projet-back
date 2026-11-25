@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Doctrine\Point;
 use App\Repository\CommerceRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -62,6 +63,9 @@ class Commerce
     #[ORM\OneToMany(targetEntity: CommerceImage::class, mappedBy: 'commerce', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
     private Collection $images;
+
+    #[ORM\Column(type: 'point', nullable: true)]
+    private ?Point $location = null;
 
     public function __construct()
     {
@@ -296,6 +300,18 @@ class Commerce
                 $image->setCommerce(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getLocation(): ?Point
+    {
+        return $this->location;
+    }
+
+    public function setLocation(?Point $location): static
+    {
+        $this->location = $location;
 
         return $this;
     }

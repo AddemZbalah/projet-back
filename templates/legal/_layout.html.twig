@@ -1,0 +1,30 @@
+{# Gabarit commun des pages légales : onglets entre les documents + sommaire + contenu. #}
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block body %}
+    {% set route = app.request.attributes.get('_route') %}
+
+    <header class="page-head">
+        <p class="eyebrow">{{ ui.icon('check', 16) }} Informations légales</p>
+        <h1>{% block legal_title %}{% endblock %}</h1>
+        <p>Dernière mise à jour : {% block legal_updated %}25 novembre 2026{% endblock %}</p>
+    </header>
+
+    <nav class="filters legal-tabs" aria-label="Documents légaux">
+        <a class="filter" href="{{ path('app_legal_cgu') }}" {% if route == 'app_legal_cgu' %}aria-current="page"{% endif %}>Conditions d’utilisation</a>
+        <a class="filter" href="{{ path('app_legal_privacy') }}" {% if route == 'app_legal_privacy' %}aria-current="page"{% endif %}>Confidentialité</a>
+        <a class="filter" href="{{ path('app_legal_mentions') }}" {% if route == 'app_legal_mentions' %}aria-current="page"{% endif %}>Mentions légales</a>
+    </nav>
+
+    <div class="legal">
+        <aside class="legal__toc card" aria-label="Sommaire">
+            <p class="legal__toc-title">Sommaire</p>
+            <ol>{% block legal_toc %}{% endblock %}</ol>
+        </aside>
+
+        <article class="legal__content card">
+            {% block legal_content %}{% endblock %}
+        </article>
+    </div>
+{% endblock %}

@@ -50,12 +50,18 @@ class RegistrationController extends AbstractController
                 $errors[] = 'Les mots de passe ne correspondent pas.';
             }
 
+            if (!$request->request->getBoolean('cgu')) {
+                $errors[] = 'Vous devez accepter les conditions générales d’utilisation.';
+            }
+
             if ($errors === []) {
+                $now = new \DateTimeImmutable();
                 $user = new User();
                 $user->setMail($mail);
                 $user->setPassword($passwordHasher->hashPassword($user, $password));
                 $user->setRoles([]);
-                $user->setCreatedAt(new \DateTimeImmutable());
+                $user->setCreatedAt($now);
+                $user->setCguValidated($now);
 
                 $entityManager->persist($user);
                 $entityManager->flush();

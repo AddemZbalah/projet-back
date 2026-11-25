@@ -14,6 +14,7 @@
             {{ ui.icon('search', 20) }}
             <input id="offer-search" type="search" placeholder="Boulangerie, sushi, nom du commerce…" aria-label="Rechercher une offre" autocomplete="off">
         </label>
+        <a class="btn btn--soft" href="{{ path('app_nearby') }}" style="justify-self: start;">{{ ui.icon('map', 18) }} Voir les commerces autour de moi</a>
     </section>
 
     {% set categories = offres|map(o => o.commerce.category|default('Commerce'))|reduce((acc, c) => c in acc ? acc : acc|merge([c]), []) %}

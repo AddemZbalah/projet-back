@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Form\CommerceType;
 use App\Repository\UserRepository;
 use App\Service\ImageUploader;
+use App\Service\Geocoder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ class CommerceRegistrationController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         CsrfTokenManagerInterface $csrfTokenManager,
         ImageUploader $imageUploader,
+        Geocoder $geocoder,
     ): Response {
         $commerce = new Commerce();
         $form = $this->createForm(CommerceType::class, $commerce);
@@ -61,12 +63,18 @@ class CommerceRegistrationController extends AbstractController
                     $accountErrors[] = 'Les mots de passe ne correspondent pas.';
                 }
 
+                if (!$request->request->getBoolean('cgu')) {
+                    $accountErrors[] = 'Vous devez accepter les conditions générales d’utilisation.';
+                }
+
                 if ($accountErrors === []) {
+                    $now = new \DateTimeImmutable();
                     $user = new User();
                     $user->setMail($mail);
                     $user->setPassword($passwordHasher->hashPassword($user, $password));
                     $user->setRoles(['ROLE_MERCHANT']);
-                    $user->setCreatedAt(new \DateTimeImmutable());
+                    $user->setCreatedAt($now);
+                    $user->setCguValidated($now);
                 }
             }
 
@@ -85,6 +93,7 @@ class CommerceRegistrationController extends AbstractController
                 }
 
                 $imageUploader->addToCommerce($commerce, $form->get('photos')->getData() ?? []);
+                $commerce->setLocation($geocoder->geocode($commerce->getAddress()));
 
                 $entityManager->persist($user);
                 $entityManager->persist($commerce);

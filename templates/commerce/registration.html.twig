@@ -37,6 +37,7 @@
                         <label for="password_confirmation">Confirmer le mot de passe</label>
                         <input type="password" id="password_confirmation" name="password_confirmation" minlength="8" autocomplete="new-password" required>
                     </div>
+                    {{ include('legal/_cgu_checkbox.html.twig') }}
                     <input type="hidden" name="_account_token" value="{{ csrf_token('commerce_register') }}">
 
                     <hr class="form-divider">

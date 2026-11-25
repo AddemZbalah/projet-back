@@ -1,0 +1,211 @@
+{% extends 'base.html.twig' %}
+{% import '_ui.html.twig' as ui %}
+
+{% block title %}Autour de moi{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const root = document.querySelector('[data-nearby]');
+            if (!root || typeof L === 'undefined') return;
+
+            const endpoint = root.dataset.endpoint;
+            const mapEl = root.querySelector('#nearby-map');
+            const listEl = root.querySelector('[data-nearby-list]');
+            const statusEl = root.querySelector('[data-nearby-status]');
+            const locateBtn = root.querySelector('[data-nearby-locate]');
+            const form = root.querySelector('[data-nearby-form]');
+            const radiusBtns = root.querySelectorAll('[data-radius]');
+
+            let radius = parseInt(root.dataset.defaultRadius, 10);
+            let lastQuery = null; // { lat, lng } ou { q }
+            const markers = new Map();
+
+            // Carte centrée sur la France en attendant une position.
+            const map = L.map(mapEl, { scrollWheelZoom: false }).setView([46.6, 2.4], 6);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            const layer = L.layerGroup().addTo(map);
+
+            const shopIcon = (count) => L.divIcon({
+                className: 'nearby-pin' + (count > 0 ? ' has-offers' : ''),
+                html: '<span>' + (count > 0 ? count : '') + '</span>',
+                iconSize: [34, 34],
+                iconAnchor: [17, 34],
+                popupAnchor: [0, -30]
+            });
+            const meIcon = L.divIcon({ className: 'nearby-me', iconSize: [18, 18] });
+
+            const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+            const formatDistance = (m) => m < 1000 ? m + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
+            const offersLabel = (n) => n > 0 ? n + ' panier' + (n > 1 ? 's' : '') + ' dispo' : 'Aucun panier';
+
+            const setStatus = (text, isError = false) => {
+                statusEl.textContent = text;
+                statusEl.classList.toggle('is-error', isError);
+            };
+
+            const render = (data) => {
+                layer.clearLayers();
+                markers.clear();
+
+                const center = [data.center.lat, data.center.lng];
+                L.marker(center, { icon: meIcon, interactive: false }).addTo(layer);
+                const circle = L.circle(center, {
+                    radius: data.radius * 1000,
+                    color: '#0b5d4e', weight: 1.5, fillColor: '#0b5d4e', fillOpacity: .06
+                }).addTo(layer);
+
+                const items = data.commerces;
+                if (items.length === 0) {
+                    setStatus('Aucun commerce à moins de ' + data.radius + ' km. Essayez un rayon plus grand.');
+                    listEl.innerHTML = '';
+                    map.fitBounds(circle.getBounds());
+                    return;
+                }
+
+                setStatus(items.length + ' commerce' + (items.length > 1 ? 's' : '') + ' à moins de ' + data.radius + ' km');
+
+                listEl.innerHTML = items.map((c) => `
+                    <li>
+                        <button class="nearby-item" type="button" data-id="${c.id}">
+                            <span class="nearby-item__media">${c.image ? `<img src="${escapeHtml(c.image)}" alt="" loading="lazy">` : ''}</span>
+                            <span class="nearby-item__body">
+                                <strong>${escapeHtml(c.name)}</strong>
+                                <span class="nearby-item__meta">${escapeHtml(c.category)} · ${formatDistance(c.distance)}${c.rating !== null ? ' · ★ ' + c.rating.toFixed(1).replace('.', ',') : ''}</span>
+                                <span class="nearby-item__offers${c.offersCount > 0 ? ' has-offers' : ''}">${offersLabel(c.offersCount)}</span>
+                            </span>
+                        </button>
+                    </li>`).join('');
+
+                items.forEach((c) => {
+                    const popup = `
+                        <strong>${escapeHtml(c.name)}</strong><br>
+                        <span>${escapeHtml(c.address)}</span><br>
+                        <span>${formatDistance(c.distance)} · ${offersLabel(c.offersCount)}</span>
+                        ${c.offerUrl ? `<br><a href="${escapeHtml(c.offerUrl)}">Voir l’offre →</a>` : ''}`;
+                    const marker = L.marker([c.lat, c.lng], { icon: shopIcon(c.offersCount), title: c.name })
+                        .bindPopup(popup)
+                        .addTo(layer);
+                    markers.set(String(c.id), marker);
+                });
+
+                map.fitBounds(circle.getBounds(), { padding: [10, 10] });
+            };
+
+            const load = async (params) => {
+                lastQuery = params;
+                setStatus('Recherche des commerces…');
+                const url = new URL(endpoint, window.location.origin);
+                Object.entries({ ...params, radius }).forEach(([k, v]) => url.searchParams.set(k, v));
+
+                try {
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        setStatus(data.error || 'Une erreur est survenue.', true);
+                        return;
+                    }
+                    render(data);
+                } catch {
+                    setStatus('Impossible de charger les commerces. Vérifiez votre connexion.', true);
+                }
+            };
+
+            // Clic sur un commerce de la liste : on centre la carte et on ouvre sa bulle.
+            listEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.nearby-item');
+                if (!btn) return;
+                const marker = markers.get(btn.dataset.id);
+                if (!marker) return;
+                map.setView(marker.getLatLng(), 17);
+                marker.openPopup();
+                mapEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+
+            locateBtn.addEventListener('click', () => {
+                if (!('geolocation' in navigator)) {
+                    setStatus('La géolocalisation n’est pas disponible. Saisissez une adresse.', true);
+                    return;
+                }
+                setStatus('Localisation en cours…');
+                locateBtn.disabled = true;
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        locateBtn.disabled = false;
+                        load({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+                    },
+                    () => {
+                        locateBtn.disabled = false;
+                        setStatus('Position refusée ou indisponible. Saisissez une adresse à la place.', true);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const q = form.elements.q.value.trim();
+                if (q) load({ q });
+            });
+
+            radiusBtns.forEach((btn) => btn.addEventListener('click', () => {
+                radius = parseInt(btn.dataset.radius, 10);
+                radiusBtns.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+                if (lastQuery) load(lastQuery);
+            }));
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+    <header class="page-head">
+        <h1>Autour de moi</h1>
+        <p>Trouvez les commerces anti-gaspi les plus proches et leurs paniers du moment.</p>
+    </header>
+
+    <div class="nearby" data-nearby
+         data-endpoint="{{ path('app_nearby_data') }}"
+         data-default-radius="{{ defaultRadius }}">
+
+        <div class="nearby__controls card">
+            <button class="btn btn--primary" type="button" data-nearby-locate>
+                {{ ui.icon('locate', 18) }} Me localiser
+            </button>
+
+            <span class="nearby__or">ou</span>
+
+            <form class="nearby__search" data-nearby-form role="search">
+                <label class="search">
+                    {{ ui.icon('search', 20) }}
+                    <input name="q" type="search" placeholder="Adresse, ville ou code postal…" aria-label="Rechercher autour d’une adresse" autocomplete="street-address">
+                </label>
+                <button class="btn btn--soft" type="submit">Rechercher</button>
+            </form>
+
+            <div class="filters nearby__radius" role="group" aria-label="Rayon de recherche">
+                {% for r in radii %}
+                    <button class="filter" type="button" data-radius="{{ r }}" aria-pressed="{{ r == defaultRadius ? 'true' : 'false' }}">{{ r }} km</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <p class="nearby__status" data-nearby-status aria-live="polite">
+            Autorisez la localisation ou saisissez une adresse pour voir les commerces proches.
+        </p>
+
+        <div class="nearby__layout">
+            <div id="nearby-map" class="nearby__map" aria-label="Carte des commerces proches"></div>
+            <ul class="nearby__list" data-nearby-list aria-label="Commerces proches"></ul>
+        </div>
+    </div>
+{% endblock %}

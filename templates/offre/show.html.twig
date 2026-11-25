@@ -3,6 +3,27 @@
 
 {% block title %}{{ offre.title }}{% endblock %}
 
+{% block stylesheets %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block javascripts %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const el = document.getElementById('map');
+            if (!el || typeof L === 'undefined') return;
+
+            const pos = [parseFloat(el.dataset.lat), parseFloat(el.dataset.lng)];
+            const map = L.map(el).setView(pos, 16);
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            L.marker(pos).addTo(map).bindPopup(el.dataset.label);
+        });
+    </script>
+{% endblock %}
+
 {% block body %}
     {% set category = offre.commerce.category|default('Commerce') %}
     {% set theme = ui.category_theme(category)|trim|split('|') %}
@@ -135,6 +156,13 @@
                 <span class="shop-card__row">{{ ui.icon('pin', 18) }} {{ commerce.address }}</span>
                 {% if commerce.phone %}
                     <a class="shop-card__row" href="tel:{{ commerce.phone|replace({' ': ''}) }}" style="text-decoration: none;">{{ ui.icon('phone', 18) }} {{ commerce.phone }}</a>
+                {% endif %}
+                {% if commerce.location %}
+                    <div id="map" style="height: 250px; border-radius: 12px; margin-top: 1rem; z-index: 0;"
+                         aria-label="Carte de localisation du commerce"
+                         data-lat="{{ commerce.location.latitude }}"
+                         data-lng="{{ commerce.location.longitude }}"
+                         data-label="{{ commerce.name }}"></div>
                 {% endif %}
             </section>
         </div>

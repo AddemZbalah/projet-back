@@ -34,6 +34,8 @@
                     <input type="password" id="password_confirmation" name="password_confirmation" minlength="8" autocomplete="new-password" required>
                 </div>
 
+                {{ include('legal/_cgu_checkbox.html.twig') }}
+
                 <button class="btn btn--primary btn--lg btn--block" type="submit">Créer mon compte</button>
             </form>
 

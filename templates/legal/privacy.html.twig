@@ -1,0 +1,57 @@
+{% extends 'legal/_layout.html.twig' %}
+
+{% block title %}Politique de confidentialité{% endblock %}
+{% block legal_title %}Politique de confidentialité{% endblock %}
+
+{% block legal_toc %}
+    <li><a href="#donnees">Données collectées</a></li>
+    <li><a href="#finalites">Finalités</a></li>
+    <li><a href="#localisation">Localisation</a></li>
+    <li><a href="#partage">Partage des données</a></li>
+    <li><a href="#conservation">Durée de conservation</a></li>
+    <li><a href="#cookies">Cookies</a></li>
+    <li><a href="#droits">Vos droits</a></li>
+{% endblock %}
+
+{% block legal_content %}
+    <section id="donnees">
+        <h2>1. Données collectées</h2>
+        <ul>
+            <li><strong>Compte :</strong> adresse e-mail, mot de passe (stocké uniquement sous forme chiffrée), date d’inscription et date d’acceptation des CGU.</li>
+            <li><strong>Utilisation :</strong> réservations, codes de retrait, commerces favoris, avis, notifications et préférences alimentaires.</li>
+            <li><strong>Commerçants :</strong> nom, catégorie, description, adresse, téléphone et photos du commerce, ainsi que ses coordonnées géographiques calculées à partir de l’adresse.</li>
+        </ul>
+    </section>
+
+    <section id="finalites">
+        <h2>2. Finalités</h2>
+        <p>Ces données servent uniquement à faire fonctionner le service : gérer votre compte, enregistrer et valider vos réservations, vous prévenir des nouvelles offres de vos commerces favoris, afficher les commerces sur la carte et mettre en avant les paniers adaptés à vos préférences.</p>
+    </section>
+
+    <section id="localisation">
+        <h2>3. Localisation</h2>
+        <p>La page « Autour de moi » peut utiliser la position de votre appareil, <strong>uniquement si vous l’autorisez</strong> dans votre navigateur. Cette position sert à rechercher les commerces proches et <strong>n’est pas enregistrée</strong>.</p>
+        <p>L’adresse des commerces est convertie en coordonnées via le service de géocodage de l’IGN (Géoplateforme). Les fonds de carte sont fournis par OpenStreetMap.</p>
+    </section>
+
+    <section id="partage">
+        <h2>4. Partage des données</h2>
+        <p>Vos données ne sont ni vendues ni louées. Lorsque vous réservez un panier, le commerçant concerné voit votre adresse e-mail et le détail de votre réservation afin de préparer votre retrait.</p>
+    </section>
+
+    <section id="conservation">
+        <h2>5. Durée de conservation</h2>
+        <p>Les données sont conservées tant que votre compte est actif. Après suppression du compte, elles sont effacées ou anonymisées, sauf obligation légale de conservation.</p>
+    </section>
+
+    <section id="cookies">
+        <h2>6. Cookies</h2>
+        <p>Le site utilise uniquement un cookie de session, strictement nécessaire à la connexion et à la sécurité des formulaires. Aucun cookie publicitaire ni de mesure d’audience n’est déposé.</p>
+    </section>
+
+    <section id="droits">
+        <h2>7. Vos droits</h2>
+        <p>Conformément au RGPD, vous disposez d’un droit d’accès, de rectification, d’effacement, d’opposition et de portabilité de vos données. Vous pouvez modifier vos informations depuis votre profil ou exercer ces droits en contactant l’éditeur (voir les <a href="{{ path('app_legal_mentions') }}">mentions légales</a>).</p>
+        <p>Vous pouvez également introduire une réclamation auprès de la CNIL (<a href="https://www.cnil.fr" rel="noopener" target="_blank">cnil.fr</a>).</p>
+    </section>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends 'legal/_layout.html.twig' %}
+
+{% block title %}Mentions légales{% endblock %}
+{% block legal_title %}Mentions légales{% endblock %}
+
+{% block legal_toc %}
+    <li><a href="#editeur">Éditeur</a></li>
+    <li><a href="#hebergement">Hébergement</a></li>
+    <li><a href="#propriete">Propriété intellectuelle</a></li>
+    <li><a href="#credits">Crédits</a></li>
+{% endblock %}
+
+{% block legal_content %}
+    {# TODO : remplacer les valeurs entre crochets par les vraies informations. #}
+    <section id="editeur">
+        <h2>1. Éditeur du site</h2>
+        <dl class="legal__facts">
+            <dt>Nom</dt><dd>[Nom de l’éditeur ou du projet]</dd>
+            <dt>Statut</dt><dd>[Projet étudiant / entreprise, n° SIRET le cas échéant]</dd>
+            <dt>Adresse</dt><dd>[Adresse postale]</dd>
+            <dt>Contact</dt><dd>[Adresse e-mail de contact]</dd>
+            <dt>Directeur de la publication</dt><dd>[Nom du responsable]</dd>
+        </dl>
+    </section>
+
+    <section id="hebergement">
+        <h2>2. Hébergement</h2>
+        <dl class="legal__facts">
+            <dt>Hébergeur</dt><dd>[Nom de l’hébergeur]</dd>
+            <dt>Adresse</dt><dd>[Adresse de l’hébergeur]</dd>
+        </dl>
+    </section>
+
+    <section id="propriete">
+        <h2>3. Propriété intellectuelle</h2>
+        <p>La structure du site, ses textes et son identité visuelle sont la propriété de l’éditeur. Les photos et descriptions des commerces et des offres restent la propriété des commerçants qui les publient.</p>
+    </section>
+
+    <section id="credits">
+        <h2>4. Crédits</h2>
+        <ul>
+            <li>Cartographie : <a href="https://www.openstreetmap.org/copyright" rel="noopener" target="_blank">© les contributeurs OpenStreetMap</a>, affichée avec Leaflet.</li>
+            <li>Géocodage : Géoplateforme de l’IGN.</li>
+            <li>Icônes : Lucide (licence ISC).</li>
+            <li>Polices : Bricolage Grotesque et Plus Jakarta Sans (Google Fonts, licence OFL).</li>
+        </ul>
+    </section>
+{% endblock %}
